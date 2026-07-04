@@ -1,44 +1,43 @@
 function cfg = ducks_config()
 %DUCKS_CONFIG Scalar ducks dataset configuration.
-%
-% Expected data file:
-%   data/processed/ducks.mat
-%
-% The .mat file should contain X as states x time. It can also contain x/y
-% coordinates or image_shape for plotting.
 
 cfg = default_experiment_config();
 
 cfg = select_dataset(cfg, ...
-    fullfile(cfg.project_root, 'data', 'processed', 'ducks.mat'), ...
+    fullfile(cfg.project_root, 'data', 'processed', 'ducks_snapshot_matrix.mat'), ...
     'scalar', ...
     'ducks');
 
 cfg.data.plot_field = 'scalar';
+cfg.data.colormap = 'gray';
 cfg.data.max_working_snapshots = 400;
 cfg.data.frame_start = 1;
 
-% Start with the same model structure as CFD. Tune these after the first run.
+% From original duck video script
+cfg.data.dt = 5e-4;
+cfg.data.image_shape = [180 320];   % rows x cols, because reshape uses [320,180]'
+
 cfg.mrdmd.L = 3;
 cfg.mrdmd.freq_threshold_hz = 1000;
 cfg.mrdmd.svd_rank = 25;
 cfg.mrdmd.min_snapshots_per_bin = 10;
 
-% Adjust these once you know the ducks snapshot count.
-cfg.frames.fit_start_idx = 1;
-cfg.frames.fit_end_idx = 100;
-cfg.frames.test_start_idx = 101;
-cfg.frames.test_end_idx = 150;
-cfg.frames.plot_start_idx = 1;
+cfg.frames.fit_start_idx = 301;
+cfg.frames.fit_end_idx = 370;
+cfg.frames.test_start_idx = 371;
+cfg.frames.test_end_idx = 400;
+cfg.frames.plot_start_idx = 301;
 
 cfg.wsindy.input_levels = [1 2];
 cfg.wsindy.target_level = 3;
 cfg.wsindy.top_input_modes_per_level = 5;
-cfg.wsindy.top_target_modes = 10;
-cfg.wsindy.lambda1 = 0.006;
-cfg.wsindy.lambda2 = 0.004;
-cfg.wsindy.gamma = 0.012;
-cfg.wsindy.max_terms_per_equation = 6;
-cfg.wsindy.max_quadratic_base_terms = 4;
+cfg.wsindy.top_target_modes = 6;
+
+cfg.wsindy.lambda1 = 0.002;
+cfg.wsindy.lambda2 = 0.001;
+cfg.wsindy.gamma = 1e-2;
+
+cfg.wsindy.max_terms_per_equation = 8;
+cfg.wsindy.max_quadratic_base_terms = 5;
 
 end

@@ -6,6 +6,11 @@ if nargin < 6 || isempty(field_type)
 end
 
 values = state_to_field(state, data, field_type);
-cfd_plot_scalar_field(ax, data.x, data.y, values, clim_vals, title_text);
+if isfield(data, 'colormap')
+    cmap = data.colormap;
+else
+    cmap = [];
+end
+cfd_plot_scalar_field(ax, data.x, data.y, values, clim_vals, title_text, cmap);
 
 end

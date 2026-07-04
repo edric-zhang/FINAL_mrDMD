@@ -1,5 +1,9 @@
-function cfd_plot_scalar_field(ax, x, y, values, clim_vals, title_text)
+function cfd_plot_scalar_field(ax, x, y, values, clim_vals, title_text, cmap)
 %CFD_PLOT_SCALAR_FIELD Makes scatter plot over (x,y) using scalar values as color.
+
+if nargin < 7 || isempty(cmap)
+    cmap = 'parula';
+end
 
 scatter(ax, x, y, 12, real(values(:)), 'filled');
 axis(ax, 'equal');
@@ -9,6 +13,6 @@ ylabel(ax, 'y');
 title(ax, title_text);
 colorbar(ax);
 set(ax, 'CLim', clim_vals);
+colormap(ax, cmap);
 
 end
-

@@ -28,7 +28,7 @@ switch layout
         component_names = {'u', 'v'};
 
     case 'scalar'
-        [npoints, x, y] = validate_scalar_layout(raw, X);
+        [npoints, x, y] = validate_scalar_layout(raw, X, cfg);
         state_components = 1;
         component_names = {'scalar'};
 
@@ -36,7 +36,9 @@ switch layout
         error('Unknown cfg.data.state_layout "%s". Use ''uv'', ''scalar'', or ''auto''.', cfg.data.state_layout);
 end
 
-if isfield(raw, 'dt')
+if isfield(cfg.data, 'dt')
+    dt = cfg.data.dt;
+elseif isfield(raw, 'dt')
     dt = raw.dt;
 else
     dt = 1; % Use snapshot index as time if the MAT file does not include physical dt.
@@ -60,6 +62,11 @@ if isfield(raw, 'tvals')
 end
 if isfield(raw, 'image_shape')
     data.image_shape = raw.image_shape;
+elseif isfield(cfg.data, 'image_shape')
+    data.image_shape = cfg.data.image_shape;
+end
+if isfield(cfg.data, 'colormap')
+    data.colormap = cfg.data.colormap;
 end
 
 end
@@ -89,7 +96,7 @@ if numel(x) ~= npoints || numel(y) ~= npoints
 end
 end
 
-function [npoints, x, y] = validate_scalar_layout(raw, X)
+function [npoints, x, y] = validate_scalar_layout(raw, X, cfg)
 if isfield(raw, 'npoints')
     npoints = double(raw.npoints);
 else
@@ -103,8 +110,12 @@ end
 if isfield(raw, 'x') && isfield(raw, 'y')
     x = raw.x(:);
     y = raw.y(:);
-elseif isfield(raw, 'image_shape')
-    image_shape = double(raw.image_shape(:));
+elseif isfield(raw, 'image_shape') || isfield(cfg.data, 'image_shape')
+    if isfield(raw, 'image_shape')
+        image_shape = double(raw.image_shape(:));
+    else
+        image_shape = double(cfg.data.image_shape(:));
+    end
     if numel(image_shape) ~= 2 || prod(image_shape) ~= npoints
         error('image_shape must be [rows cols] and prod(image_shape) must equal npoints.');
     end
@@ -122,4 +133,3 @@ if numel(x) ~= npoints || numel(y) ~= npoints
     error('Expected x and y to each contain npoints entries.');
 end
 end
-

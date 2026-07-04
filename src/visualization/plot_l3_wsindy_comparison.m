@@ -7,6 +7,11 @@ figure('Name', 'True vs WSINDy L3 Contribution', ...
 
 l3_clim = state_field_clim_pair(X_l3_true, X_l3_wsindy, data);
 l3_err_clim = state_field_error_clim(X_l3_true, X_l3_wsindy, data);
+if isfield(data, 'colormap')
+    cmap = data.colormap;
+else
+    cmap = [];
+end
 
 for k = 1:recreate_steps
     absolute_frame = test_start_idx + k - 1;
@@ -22,7 +27,7 @@ for k = 1:recreate_steps
     ax3 = subplot(1,3,3);
     l3_err_frame = state_field_error(X_l3_true(:,k), X_l3_wsindy(:,k), data);
     cfd_plot_scalar_field(ax3, data.x, data.y, l3_err_frame, l3_err_clim, ...
-        sprintf('L3 %s Error, Frame %d', data.plot_field, absolute_frame));
+        sprintf('L3 %s Error, Frame %d', data.plot_field, absolute_frame), cmap);
 
     drawnow;
 end

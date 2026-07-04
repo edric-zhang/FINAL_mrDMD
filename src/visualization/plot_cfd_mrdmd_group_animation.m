@@ -69,6 +69,9 @@ for gg = 1:num_groups
     ylabel(ax, 'y');
     colorbar(ax);
     set(ax, 'CLim', clim_by_group(gg, :));
+    if isfield(data, 'colormap')
+        colormap(ax, data.colormap);
+    end
     title_handles(gg) = title(ax, sprintf('[%s] %s', field_type, group_title));
 end
 

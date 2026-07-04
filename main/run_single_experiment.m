@@ -74,9 +74,10 @@ plot_experiment_summary(details, data, cfg, 1)
 plot_sweep_results(result_table)
 %}
 
-animate_l3_wsindy_comparison(details, data, cfg);
-animate_mrdmd_mode_groups(mrdmd, data);
+%animate_l3_wsindy_comparison(details, data, cfg);
+%animate_mrdmd_mode_groups(mrdmd, data);
+
+%animate_full_wsindy_comparison(details, data, cfg);
 %{
-animate_full_wsindy_comparison(details, data, cfg);
 animate_experiment_summary(details, data, cfg, mrdmd)
 %}
