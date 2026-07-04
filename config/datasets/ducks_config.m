@@ -18,7 +18,7 @@ cfg.data.dt = 5e-4;
 cfg.data.image_shape = [180 320];   % rows x cols, because reshape uses [320,180]'
 
 cfg.mrdmd.L = 3;
-cfg.mrdmd.freq_threshold_hz = 1000;
+cfg.mrdmd.freq_threshold_cycles_per_snapshot = 0.5;
 cfg.mrdmd.svd_rank = 25;
 cfg.mrdmd.min_snapshots_per_bin = 10;
 

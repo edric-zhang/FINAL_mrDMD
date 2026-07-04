@@ -12,6 +12,14 @@ if ~exist('cfg', 'var')
 end
 data = load_spatiotemporal_dataset(cfg);
 
+fprintf('\nActive dataset: %s\n', cfg.data.name);
+fprintf('mrDMD rank: %d\n', cfg.mrdmd.svd_rank);
+if isfield(cfg.mrdmd, 'freq_threshold_cycles_per_snapshot')
+    fprintf('mrDMD threshold: %.6g cycles/snapshot\n', cfg.mrdmd.freq_threshold_cycles_per_snapshot);
+elseif isfield(cfg.mrdmd, 'freq_threshold_hz')
+    fprintf('mrDMD threshold: %.6g Hz\n', cfg.mrdmd.freq_threshold_hz);
+end
+
 fprintf('\nSTARTING MRDMD\n');
 mrdmd = compute_mrdmd(data.X, data.dt, cfg);
 
@@ -32,11 +40,11 @@ target_coordinates = [
 
 %% Run WSINDy structure/parameter sweep
 
-fprintf('\nRunning weak SINDy CFD structure sweep on mrDMD modal amplitudes...\n');
+fprintf('\nRunning weak SINDy structure sweep on mrDMD modal amplitudes...\n');
 tic;
 
 param_grid = sweep_grid_cfd();
-sweep_results = zeros(size(param_grid,1), 11);
+sweep_results = zeros(size(param_grid,1), 15);
 
 for rr = 1:size(param_grid,1)
     lambda1 = param_grid(rr,1);
@@ -51,26 +59,34 @@ for rr = 1:size(param_grid,1)
         rr, size(param_grid,1), lambda1, lambda2, gamma, ...
         top_input_modes_per_level, top_target_modes, max_terms_per_equation, max_quadratic_base_terms);
 
-    [mean_l3_err, max_l3_err, mean_full_err, max_full_err] = evaluate_wsindy_parameter_set( ...
+    [mean_l3_err, max_l3_err, mean_full_err, max_full_err, details_sweep] = evaluate_wsindy_parameter_set( ...
         mrdmd.list_w, mrdmd.list_b, mrdmd.list_modes, mrdmd.list_t_start, mrdmd.list_bin_widths, ...
         data.X, data.dt, data.m, data.n, cfg.wsindy.input_levels, cfg.wsindy.target_level, ...
         cfg.frames.fit_start_idx, cfg.frames.fit_end_idx, cfg.frames.test_start_idx, cfg.frames.test_end_idx, ...
         top_input_modes_per_level, top_target_modes, ...
-        lambda1, lambda2, gamma, max_terms_per_equation, max_quadratic_base_terms);
+        lambda1, lambda2, gamma, max_terms_per_equation, max_quadratic_base_terms, mrdmd.list_anchor_idx);
+
+    mean_full_corr = mean(details_sweep.raw_full_corr);
+    min_full_corr = min(details_sweep.raw_full_corr);
+    mean_modal_corr = mean(details_sweep.mrdmd_full_corr);
+    mean_mrdmd_raw_err = mean(details_sweep.mrdmd_raw_error) * 100;
 
     sweep_results(rr,:) = [lambda1, lambda2, gamma, ...
         top_input_modes_per_level, top_target_modes, max_terms_per_equation, max_quadratic_base_terms, ...
-        mean_l3_err, max_l3_err, mean_full_err, max_full_err];
+        mean_l3_err, max_l3_err, mean_full_err, max_full_err, ...
+        mean_full_corr, min_full_corr, mean_modal_corr, mean_mrdmd_raw_err];
 
-    fprintf('RESULT | lambda1 %.4g | lambda2 %.4g | gamma %.4g | inputs %d | targets %d | maxTerms %d | quadBase %d | L3 mean %.2f%% | L3 max %.2f%% | full mean %.2f%% | full max %.2f%%\n', ...
+    fprintf('RESULT | lambda1 %.4g | lambda2 %.4g | gamma %.4g | inputs %d | targets %d | maxTerms %d | quadBase %d | L3 mean %.2f%% | L3 max %.2f%% | raw full mean %.2f%% | raw full max %.2f%% | raw corr mean %.4f | raw corr min %.4f\n', ...
         lambda1, lambda2, gamma, top_input_modes_per_level, top_target_modes, ...
         max_terms_per_equation, max_quadratic_base_terms, ...
-        mean_l3_err, max_l3_err, mean_full_err, max_full_err);
+        mean_l3_err, max_l3_err, mean_full_err, max_full_err, mean_full_corr, min_full_corr);
 end
 
-fprintf('\n================ CFD STRUCTURE SWEEP RESULTS ================\n');
+fprintf('\n================ STRUCTURE SWEEP RESULTS ================\n');
 result_table = array2table(sweep_results, ...
-    'VariableNames', {'lambda1','lambda2','gamma','top_inputs','top_targets','max_terms','quad_base','mean_L3_error','max_L3_error','mean_full_error','max_full_error'});
+    'VariableNames', {'lambda1','lambda2','gamma','top_inputs','top_targets','max_terms','quad_base', ...
+    'mean_L3_error','max_L3_error','mean_raw_full_error','max_raw_full_error', ...
+    'mean_raw_full_corr','min_raw_full_corr','mean_mrdmd_full_corr','mean_mrdmd_raw_error'});
 disp(result_table);
 
 prepare_result_dir(cfg.results.sweep_dir, cfg.results.clear_sweeps_on_sweep_run);

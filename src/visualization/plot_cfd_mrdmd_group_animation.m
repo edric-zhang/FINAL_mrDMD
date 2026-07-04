@@ -1,6 +1,10 @@
 function plot_cfd_mrdmd_group_animation(list_modes, list_w, list_b, list_t_start, list_bin_widths, ...
-    data, mode_groups)
+    data, mode_groups, list_anchor_idx)
 %PLOT_CFD_MRDMD_GROUP_ANIMATION Animate chosen grouped mrDMD mode contributions.
+
+if nargin < 8 || isempty(list_anchor_idx)
+    list_anchor_idx = ones(size(list_bin_widths));
+end
 
 num_groups = size(mode_groups, 1);
 num_cols = 2;
@@ -37,7 +41,7 @@ for gg = 1:num_groups
 end
 
 clim_by_group = cfd_group_animation_clim(list_modes, list_w, list_b, ...
-    list_t_start, list_bin_widths, data, mode_groups, group_frames, valid_groups);
+    list_t_start, list_bin_widths, data, mode_groups, group_frames, valid_groups, list_anchor_idx);
 
 figure('Name', 'Grouped mrDMD Mode Contributions', ...
     'Position', [100 30 1500 450*num_rows]);
@@ -58,7 +62,7 @@ for gg = 1:num_groups
     values = nan(data.npoints, 1);
     if valid_groups(gg)
         state = cfd_group_contribution_state(list_modes, list_w, list_b, ...
-            list_t_start, list_bin_widths, data.n, mode_groups{gg, 1}, group_frames{gg}(1));
+            list_t_start, list_bin_widths, data.n, mode_groups{gg, 1}, group_frames{gg}(1), list_anchor_idx);
         values = state_to_field(state, data, field_type);
     end
 
@@ -90,7 +94,7 @@ for step = 1:max_steps
         frame = frames(min(step, length(frames)));
 
         state = cfd_group_contribution_state(list_modes, list_w, list_b, ...
-            list_t_start, list_bin_widths, data.n, mode_groups{gg, 1}, frame);
+            list_t_start, list_bin_widths, data.n, mode_groups{gg, 1}, frame, list_anchor_idx);
         values = state_to_field(state, data, field_type);
 
         set(scatter_handles(gg), 'CData', values);

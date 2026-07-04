@@ -2,7 +2,7 @@ function [w_second, labels_second, mode_labels, target_cols, mu_xobs, sigma_xobs
     list_w, list_b, list_modes, list_t_start, list_bin_widths, ...
     dt, m, input_levels, target_level, plot_start_idx, plot_end_idx, ...
     top_input_modes_per_level, top_target_modes, lambda1, lambda2, gamma, ...
-    max_terms_per_equation, max_quadratic_base_terms)
+    max_terms_per_equation, max_quadratic_base_terms, list_anchor_idx)
 %RUN_MRDMD_WSINDY Fit two-pass WSINDy models on mrDMD modal amplitudes.
 %
 % Builds modal amplitude timeseries (xobs) from stored DMD modes.
@@ -18,6 +18,9 @@ if nargin < 15 || isempty(lambda2), lambda2 = 0.004; end
 if nargin < 16 || isempty(gamma), gamma = 0.012; end
 if nargin < 17 || isempty(max_terms_per_equation), max_terms_per_equation = 6; end
 if nargin < 18 || isempty(max_quadratic_base_terms), max_quadratic_base_terms = 4; end
+if nargin < 19 || isempty(list_anchor_idx)
+    list_anchor_idx = ones(size(list_bin_widths));
+end
 
 m_interval = plot_end_idx - plot_start_idx + 1;
 
@@ -53,8 +56,16 @@ for lev = 1:Lmax
         local_start = max(t_start, plot_start_idx);
         local_end = min(t_end, plot_end_idx);
 
-        rel_start = local_start - t_start;
-        rel_end = local_end - t_start;
+        anchor_idx = list_anchor_idx(lev, bin);
+        anchor_frame = t_start + anchor_idx - 1;
+
+        local_start = max(local_start, anchor_frame);
+        if local_start > local_end
+            continue;
+        end
+
+        rel_start = local_start - anchor_frame;
+        rel_end = local_end - anchor_frame;
 
         insert_start = local_start - plot_start_idx + 1;
         insert_end = local_end - plot_start_idx + 1;

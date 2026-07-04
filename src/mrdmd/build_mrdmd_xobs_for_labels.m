@@ -1,7 +1,11 @@
 function [xobs, tobs] = build_mrdmd_xobs_for_labels( ...
     list_w, list_b, list_t_start, list_bin_widths, ...
-    dt, ~, mode_labels, start_idx, end_idx)
+    dt, ~, mode_labels, start_idx, end_idx, list_anchor_idx)
 %BUILD_MRDMD_XOBS_FOR_LABELS Builds modal amplitudes based on b * lambda^t.
+
+if nargin < 10 || isempty(list_anchor_idx)
+    list_anchor_idx = ones(size(list_bin_widths));
+end
 
 m_interval = end_idx - start_idx + 1;
 xobs = zeros(m_interval, length(mode_labels));
@@ -23,8 +27,16 @@ for c = 1:length(mode_labels)
     local_start = max(start_idx, t_start);
     local_end = min(end_idx, t_end);
 
-    rel_start = local_start - t_start;
-    rel_end = local_end - t_start;
+    anchor_idx = list_anchor_idx(lev, bin);
+    anchor_frame = t_start + anchor_idx - 1;
+
+    local_start = max(local_start, anchor_frame);
+    if local_start > local_end
+        continue;
+    end
+
+    rel_start = local_start - anchor_frame;
+    rel_end = local_end - anchor_frame;
 
     insert_start = local_start - start_idx + 1;
     insert_end = local_end - start_idx + 1;

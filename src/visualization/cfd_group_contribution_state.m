@@ -1,7 +1,11 @@
 function state = cfd_group_contribution_state(list_modes, list_w, list_b, ...
-    list_t_start, list_bin_widths, state_size, mode_specs, frame)
+    list_t_start, list_bin_widths, state_size, mode_specs, frame, list_anchor_idx)
 %CFD_GROUP_CONTRIBUTION_STATE Build the time evolution of chosen mrDMD modes.
 % Use Mode * b * lambda^time.
+
+if nargin < 9 || isempty(list_anchor_idx)
+    list_anchor_idx = ones(size(list_bin_widths));
+end
 
 state = zeros(state_size, 1);
 
@@ -22,7 +26,14 @@ for ii = 1:size(mode_specs, 1)
         continue;
     end
 
-    rel_time = frame - t_start;
+    anchor_idx = list_anchor_idx(lev, bin);
+    anchor_frame = t_start + anchor_idx - 1;
+
+    if frame < anchor_frame
+        continue;
+    end
+
+    rel_time = frame - anchor_frame;
     amp = list_b{lev, bin}(mode_idx) * list_w{lev, bin}(mode_idx)^rel_time;
     state = state + real(list_modes{lev, bin}(:, mode_idx) * amp);
 end

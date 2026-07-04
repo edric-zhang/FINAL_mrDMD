@@ -59,6 +59,8 @@ if isfield(raw, 'z')
 end
 if isfield(raw, 'tvals')
     data.tvals = raw.tvals(:);
+elseif isfield(raw, 'timesteps')
+    data.tvals = raw.timesteps(:);
 end
 if isfield(raw, 'image_shape')
     data.image_shape = raw.image_shape;
@@ -110,6 +112,9 @@ end
 if isfield(raw, 'x') && isfield(raw, 'y')
     x = raw.x(:);
     y = raw.y(:);
+elseif isfield(raw, 'lon') && isfield(raw, 'lat')
+    x = raw.lon(:);
+    y = raw.lat(:);
 elseif isfield(raw, 'image_shape') || isfield(cfg.data, 'image_shape')
     if isfield(raw, 'image_shape')
         image_shape = double(raw.image_shape(:));

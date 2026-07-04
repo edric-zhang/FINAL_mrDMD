@@ -12,6 +12,14 @@ if ~exist('cfg', 'var')
 end
 data = load_spatiotemporal_dataset(cfg);
 
+fprintf('\nActive dataset: %s\n', cfg.data.name);
+fprintf('mrDMD rank: %d\n', cfg.mrdmd.svd_rank);
+if isfield(cfg.mrdmd, 'freq_threshold_cycles_per_snapshot')
+    fprintf('mrDMD threshold: %.6g cycles/snapshot\n', cfg.mrdmd.freq_threshold_cycles_per_snapshot);
+elseif isfield(cfg.mrdmd, 'freq_threshold_hz')
+    fprintf('mrDMD threshold: %.6g Hz\n', cfg.mrdmd.freq_threshold_hz);
+end
+
 fprintf('\nSTARTING MRDMD\n');
 mrdmd = compute_mrdmd(data.X, data.dt, cfg);
 
@@ -32,7 +40,7 @@ tic;
     cfg.frames.fit_start_idx, cfg.frames.fit_end_idx, cfg.frames.test_start_idx, cfg.frames.test_end_idx, ...
     cfg.wsindy.top_input_modes_per_level, cfg.wsindy.top_target_modes, ...
     cfg.wsindy.lambda1, cfg.wsindy.lambda2, cfg.wsindy.gamma, ...
-    cfg.wsindy.max_terms_per_equation, cfg.wsindy.max_quadratic_base_terms);
+    cfg.wsindy.max_terms_per_equation, cfg.wsindy.max_quadratic_base_terms, mrdmd.list_anchor_idx);
 
 toc;
 
@@ -40,6 +48,9 @@ fprintf('\nMean L3 error: %.2f%%\n', mean_l3_err);
 fprintf('Max L3 error: %.2f%%\n', max_l3_err);
 fprintf('Mean full error: %.2f%%\n', mean_full_err);
 fprintf('Max full error: %.2f%%\n', max_full_err);
+fprintf('Mean raw-vs-WSINDy full correlation: %.4f\n', mean(details.raw_full_corr));
+fprintf('Min raw-vs-WSINDy full correlation: %.4f\n', min(details.raw_full_corr));
+fprintf('Mean raw-vs-mrDMD baseline error: %.4f%%\n', mean(details.mrdmd_raw_error) * 100);
 
 fprintf('\n================ SECOND-PASS LEVEL 3 EQUATIONS ================\n');
 print_wsindy_equations(details.w_second, details.labels_second, details.mode_labels, details.target_cols);
@@ -58,12 +69,12 @@ end
 
 %% Plot Menu
 
-plot_reconstruction_error(mrdmd_error, data.numsnapshots);
-plot_l3_error(details, cfg);
+plot_reconstruction_error(mrdmd_error, data.numsnapshots)
+plot_l3_error(details, cfg)
 plot_full_error(details, cfg)
 
 %{
-plot_l3_frame(details, data, 1)
+plot_l3_frame(details, data, 1
 plot_full_frame(details, data, 1)
 plot_experiment_summary(details, data, cfg, 1)
 %}
@@ -73,11 +84,32 @@ plot_experiment_summary(details, data, cfg, 1)
 %{
 plot_sweep_results(result_table)
 %}
-
-%animate_l3_wsindy_comparison(details, data, cfg);
+animate_raw_mrdmd_wsindy_comparison(details, data, cfg)
+%animate_l3_wsindy_comparison(details, data, cfg)
 %animate_mrdmd_mode_groups(mrdmd, data);
-
+%animate_raw_full_wsindy_comparison(details, data, cfg)
 %animate_full_wsindy_comparison(details, data, cfg);
 %{
 animate_experiment_summary(details, data, cfg, mrdmd)
 %}
+
+
+[X_rec_check, ~] = reconstruct_mrdmd(mrdmd, data.X, cfg.data.frame_start, data.numsnapshots);
+
+test_idx = cfg.frames.test_start_idx:cfg.frames.test_end_idx;
+corr_vals = zeros(1, numel(test_idx));
+
+for k = 1:numel(test_idx)
+    raw = data.X(:, test_idx(k));
+    rec = X_rec_check(:, test_idx(k));
+
+    corr_vals(k) = dot(raw, rec) / ((norm(raw) * norm(rec)) + eps);
+end
+
+figure;
+plot(test_idx, corr_vals, 'LineWidth', 1.5);
+grid on;
+xlabel('Snapshot');
+ylabel('Spatial correlation');
+title('Raw vs mrDMD Spatial Correlation');
+ylim([-1 1]);

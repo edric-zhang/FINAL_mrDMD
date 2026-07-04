@@ -16,7 +16,7 @@ cfg.data.max_working_snapshots = 400;
 cfg.data.frame_start = 1;
 
 cfg.mrdmd.L = 3;
-cfg.mrdmd.freq_threshold_hz = 1000;
+cfg.mrdmd.freq_threshold_cycles_per_snapshot = 0.5;
 cfg.mrdmd.svd_rank = 25;
 cfg.mrdmd.min_snapshots_per_bin = 10;
 
@@ -50,7 +50,7 @@ cfg.results.sweep_dir = fullfile(cfg.project_root, 'results', 'sweeps');
 cfg.results.figure_dir = fullfile(cfg.project_root, 'results', 'figures');
 cfg.results.model_dir = fullfile(cfg.project_root, 'results', 'models');
 cfg.results.save_single_model = true;
-cfg.results.save_sweep_results = true;
+cfg.results.save_sweep_results = false;
 % Turn these on only when you intentionally want to clear old generated files.
 cfg.results.clear_models_on_single_run = false;
 cfg.results.clear_sweeps_on_sweep_run = false;

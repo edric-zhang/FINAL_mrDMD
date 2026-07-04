@@ -8,4 +8,3 @@ bin = nums(2);
 mode_idx = nums(3);
 
 end
-

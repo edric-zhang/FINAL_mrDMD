@@ -7,6 +7,12 @@ raw = load(cfg.data.mat_file);
 data = validate_spatiotemporal_dataset(raw, cfg);
 data.X = single(data.X);
 
+if isfield(cfg.data, 'nan_fill_value') && any(isnan(data.X(:)))
+    nan_count = nnz(isnan(data.X));
+    fprintf('Replacing %d NaN values in X with %.4g.\n', nan_count, cfg.data.nan_fill_value);
+    data.X(isnan(data.X)) = single(cfg.data.nan_fill_value);
+end
+
 X_all = data.X;
 if size(X_all, 2) >= cfg.data.max_working_snapshots + 1
     data.X_test = single(X_all(:, cfg.data.max_working_snapshots+1:end));

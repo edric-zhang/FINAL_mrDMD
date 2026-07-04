@@ -1,6 +1,10 @@
 function clim_by_group = cfd_group_animation_clim(list_modes, list_w, list_b, ...
-    list_t_start, list_bin_widths, data, mode_groups, group_frames, valid_groups)
+    list_t_start, list_bin_widths, data, mode_groups, group_frames, valid_groups, list_anchor_idx)
 %CFD_GROUP_ANIMATION_CLIM Compute fixed color limits for mode animation panels.
+
+if nargin < 10 || isempty(list_anchor_idx)
+    list_anchor_idx = ones(size(list_bin_widths));
+end
 
 num_groups = size(mode_groups, 1);
 clim_by_group = repmat([-1 1], num_groups, 1);
@@ -16,7 +20,7 @@ for gg = 1:num_groups
 
     for kk = 1:length(frames)
         state = cfd_group_contribution_state(list_modes, list_w, list_b, ...
-            list_t_start, list_bin_widths, data.n, mode_groups{gg, 1}, frames(kk));
+            list_t_start, list_bin_widths, data.n, mode_groups{gg, 1}, frames(kk), list_anchor_idx);
         values = state_to_field(state, data, field_type);
         max_abs_val = max(max_abs_val, max(abs(values)));
     end

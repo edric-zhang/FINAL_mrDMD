@@ -15,30 +15,38 @@ cfg = select_dataset(cfg, ...
     'earthquake');
 
 cfg.data.plot_field = 'scalar';
-cfg.data.max_working_snapshots = 400;
+cfg.data.colormap = 'hot';
+cfg.data.nan_fill_value = 0;
+cfg.data.max_working_snapshots = 251;
 cfg.data.frame_start = 1;
 
-% Start with the same model structure as CFD. Tune these after the first run.
-cfg.mrdmd.L = 3;
-cfg.mrdmd.freq_threshold_hz = 1000;
-cfg.mrdmd.svd_rank = 25;
+cfg.mrdmd.L = 5;
+cfg.mrdmd.freq_threshold_cycles_per_snapshot = 0.16;
+
+cfg.mrdmd.svd_rank = 75;
 cfg.mrdmd.min_snapshots_per_bin = 10;
 
-% Adjust these once you know the earthquake snapshot count.
-cfg.frames.fit_start_idx = 1;
-cfg.frames.fit_end_idx = 100;
-cfg.frames.test_start_idx = 101;
-cfg.frames.test_end_idx = 150;
-cfg.frames.plot_start_idx = 1;
+% mrDMD can use more than 3 levels, but WSINDy is still trained on level 3
+% because those bins have enough snapshots for fit/test.
+% For 251 snapshots, the level-3 bins are approximately:
+%   L3 B1: 1-62, B2: 63-125, B3: 126-188, B4: 189-251.
+% Keep fit/test inside one level-3 bin for the WSINDy recreation.
+cfg.frames.fit_start_idx = 189;
+cfg.frames.fit_end_idx = 230;
+cfg.frames.test_start_idx = 231;
+cfg.frames.test_end_idx = 251;
+cfg.frames.plot_start_idx = 189;
 
 cfg.wsindy.input_levels = [1 2];
 cfg.wsindy.target_level = 3;
 cfg.wsindy.top_input_modes_per_level = 5;
-cfg.wsindy.top_target_modes = 10;
-cfg.wsindy.lambda1 = 0.006;
-cfg.wsindy.lambda2 = 0.004;
-cfg.wsindy.gamma = 0.012;
-cfg.wsindy.max_terms_per_equation = 6;
+cfg.wsindy.top_target_modes = 1;
+cfg.wsindy.lambda1 = 0.4;
+cfg.wsindy.lambda2 = 0.08;
+cfg.wsindy.gamma = 0.001;
+cfg.wsindy.max_terms_per_equation = 5;
 cfg.wsindy.max_quadratic_base_terms = 4;
+
+cfg.results.save_sweep_results = false;
 
 end

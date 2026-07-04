@@ -6,6 +6,6 @@ if nargin < 3 || isempty(mode_groups)
 end
 
 plot_cfd_mrdmd_group_animation(mrdmd.list_modes, mrdmd.list_w, mrdmd.list_b, ...
-    mrdmd.list_t_start, mrdmd.list_bin_widths, data, mode_groups);
+    mrdmd.list_t_start, mrdmd.list_bin_widths, data, mode_groups, mrdmd.list_anchor_idx);
 
 end
