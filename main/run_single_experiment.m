@@ -1,0 +1,82 @@
+close all;
+clc;
+clearvars -except cfg;
+
+project_root = fileparts(fileparts(mfilename('fullpath')));
+addpath(genpath(fullfile(project_root, 'config')));
+addpath(genpath(fullfile(project_root, 'src')));
+addpath(genpath(fullfile(project_root, 'external', 'wsindy')));
+
+if ~exist('cfg', 'var')
+    cfg = default_experiment_config();
+end
+data = load_spatiotemporal_dataset(cfg);
+
+fprintf('\nSTARTING MRDMD\n');
+mrdmd = compute_mrdmd(data.X, data.dt, cfg);
+
+[~, mrdmd_error] = reconstruct_mrdmd(mrdmd, data.X, cfg.data.frame_start, data.numsnapshots);
+
+
+plot_end_idx = data.m;
+print_available_modes(mrdmd, cfg.frames.plot_start_idx, plot_end_idx);
+
+%% Run one configured WSINDy model
+
+fprintf('\nRunning weak SINDy on mrDMD modal amplitudes...\n');
+tic;
+
+[mean_l3_err, max_l3_err, mean_full_err, max_full_err, details] = evaluate_wsindy_parameter_set( ...
+    mrdmd.list_w, mrdmd.list_b, mrdmd.list_modes, mrdmd.list_t_start, mrdmd.list_bin_widths, ...
+    data.X, data.dt, data.m, data.n, cfg.wsindy.input_levels, cfg.wsindy.target_level, ...
+    cfg.frames.fit_start_idx, cfg.frames.fit_end_idx, cfg.frames.test_start_idx, cfg.frames.test_end_idx, ...
+    cfg.wsindy.top_input_modes_per_level, cfg.wsindy.top_target_modes, ...
+    cfg.wsindy.lambda1, cfg.wsindy.lambda2, cfg.wsindy.gamma, ...
+    cfg.wsindy.max_terms_per_equation, cfg.wsindy.max_quadratic_base_terms);
+
+toc;
+
+fprintf('\nMean L3 error: %.2f%%\n', mean_l3_err);
+fprintf('Max L3 error: %.2f%%\n', max_l3_err);
+fprintf('Mean full error: %.2f%%\n', mean_full_err);
+fprintf('Max full error: %.2f%%\n', max_full_err);
+
+fprintf('\n================ SECOND-PASS LEVEL 3 EQUATIONS ================\n');
+print_wsindy_equations(details.w_second, details.labels_second, details.mode_labels, details.target_cols);
+
+prepare_result_dir(cfg.results.model_dir, cfg.results.clear_models_on_single_run);
+if cfg.results.save_single_model
+    stamp = char(datetime("now", "Format", "yyyyMMdd_HHmmss"));
+    model_file = fullfile(cfg.results.model_dir, ['wsindy_single_' cfg.data.name '_' stamp '.mat']);
+    save(model_file, 'cfg', 'mrdmd', 'details', 'mean_l3_err', 'max_l3_err', 'mean_full_err', 'max_full_err');
+    fprintf('\nSaved model: %s\n', model_file);
+else
+    fprintf('\nModel saving is off. Set cfg.results.save_single_model = true to save models.\n');
+end
+
+
+
+%% Plot Menu
+
+plot_reconstruction_error(mrdmd_error, data.numsnapshots);
+plot_l3_error(details, cfg);
+plot_full_error(details, cfg)
+
+%{
+plot_l3_frame(details, data, 1)
+plot_full_frame(details, data, 1)
+plot_experiment_summary(details, data, cfg, 1)
+%}
+
+
+% For sweep: 
+%{
+plot_sweep_results(result_table)
+%}
+
+animate_l3_wsindy_comparison(details, data, cfg);
+animate_mrdmd_mode_groups(mrdmd, data);
+%{
+animate_full_wsindy_comparison(details, data, cfg);
+animate_experiment_summary(details, data, cfg, mrdmd)
+%}
