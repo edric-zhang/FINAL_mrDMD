@@ -2,7 +2,7 @@ function [w_second, labels_second, mode_labels, target_cols, mu_xobs, sigma_xobs
     list_w, list_b, list_modes, list_t_start, list_bin_widths, ...
     dt, m, input_levels, target_level, plot_start_idx, plot_end_idx, ...
     top_input_modes_per_level, top_target_modes, lambda1, lambda2, gamma, ...
-    max_terms_per_equation, max_quadratic_base_terms, list_anchor_idx)
+    max_terms_per_equation, max_quadratic_base_terms, list_anchor_idx, include_constant_term, include_time_term, force_target_peer_terms, max_peer_l3_per_equation)
 %RUN_MRDMD_WSINDY Fit two-pass WSINDy models on mrDMD modal amplitudes.
 %
 % Builds modal amplitude timeseries (xobs) from stored DMD modes.
@@ -20,6 +20,18 @@ if nargin < 17 || isempty(max_terms_per_equation), max_terms_per_equation = 6; e
 if nargin < 18 || isempty(max_quadratic_base_terms), max_quadratic_base_terms = 4; end
 if nargin < 19 || isempty(list_anchor_idx)
     list_anchor_idx = ones(size(list_bin_widths));
+end
+if nargin < 20 || isempty(include_constant_term)
+    include_constant_term = false;
+end
+if nargin < 21 || isempty(include_time_term)
+    include_time_term = false;
+end
+if nargin < 22 || isempty(force_target_peer_terms)
+    force_target_peer_terms = false;
+end
+if nargin < 23 || isempty(max_peer_l3_per_equation)
+    max_peer_l3_per_equation = 2;
 end
 
 m_interval = plot_end_idx - plot_start_idx + 1;
@@ -110,9 +122,6 @@ mode_labels = mode_labels(keep_cols);
 mode_levels = mode_levels(keep_cols);
 target_cols = find(mode_levels == target_level);
 
-fprintf('\nReduced WSINDy library to %d modes: %d input modes, %d target modes.\n', ...
-    size(xobs, 2), sum(ismember(mode_levels, input_levels)), length(target_cols));
-
 weights = [];
 polys = 1;
 trigs = [];
@@ -131,7 +140,6 @@ useGLS = 0;
 include_quadratic_terms = true;
 include_cross_terms = true;
 max_active_inputs_per_equation = 4;
-max_peer_l3_per_equation = 2;
 relative_term_tol = 0.03;
 max_nonlinear_terms_per_equation = 4;
 
@@ -184,14 +192,32 @@ for kk = 1:length(target_cols)
     active_peers = active_linear(ismember(mode_levels(active_linear), target_level));
     active_peers(active_peers == target_col) = [];
 
-    if ~isempty(active_peers)
+    if force_target_peer_terms
+        forced_peers = target_cols(:).';
+        forced_peers(forced_peers == target_col) = [];
+        active_peers = unique([forced_peers(:); active_peers(:)], 'stable');
+    elseif ~isempty(active_peers)
         [~, ord] = sort(abs(coef1(active_peers)), 'descend');
         active_peers = active_peers(ord(1:min(max_peer_l3_per_equation, length(active_peers))));
+    end
+
+    if force_target_peer_terms && isfinite(max_peer_l3_per_equation) && length(active_peers) > max_peer_l3_per_equation
+        active_peers = active_peers(1:max_peer_l3_per_equation);
     end
 
     % ---- build second-pass observed state matrix ----
     xobs2 = [];
     labels2 = {};
+
+    if include_constant_term
+        xobs2 = [xobs2, ones(size(xobs, 1), 1)]; %#ok<AGROW>
+        labels2{end+1} = '1'; %#ok<AGROW>
+    end
+
+    if include_time_term
+        xobs2 = [xobs2, normalized_time_feature(tobs)]; %#ok<AGROW>
+        labels2{end+1} = 't'; %#ok<AGROW>
+    end
 
     % active first-pass linear variables only
     for a = 1:length(active_inputs)
@@ -283,3 +309,21 @@ for kk = 1:length(target_cols)
 end
 
 end
+
+function t_feature = normalized_time_feature(tobs)
+%NORMALIZED_TIME_FEATURE Scale local time to [-1, 1].
+
+t0 = min(tobs);
+t1 = max(tobs);
+if t1 <= t0
+    t_feature = zeros(size(tobs));
+else
+    t_feature = 2 * (tobs - t0) / (t1 - t0) - 1;
+end
+
+end
+
+
+
+
+

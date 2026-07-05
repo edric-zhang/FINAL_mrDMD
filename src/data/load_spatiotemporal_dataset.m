@@ -1,7 +1,6 @@
 function data = load_spatiotemporal_dataset(cfg)
 %LOAD_SPATIOTEMPORAL_DATASET Load spatial-state snapshots over time.
 
-fprintf('Loading %s...\n', cfg.data.mat_file);
 raw = load(cfg.data.mat_file);
 
 data = validate_spatiotemporal_dataset(raw, cfg);

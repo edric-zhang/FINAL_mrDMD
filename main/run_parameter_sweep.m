@@ -12,6 +12,46 @@ if ~exist('cfg', 'var')
 end
 data = load_spatiotemporal_dataset(cfg);
 
+if ~isfield(cfg.wsindy, 'include_constant_term')
+    cfg.wsindy.include_constant_term = false;
+end
+if ~isfield(cfg.wsindy, 'include_time_term')
+    cfg.wsindy.include_time_term = false;
+end
+if ~isfield(cfg.wsindy, 'force_target_peer_terms')
+    cfg.wsindy.force_target_peer_terms = false;
+end
+if ~isfield(cfg.wsindy, 'max_peer_l3_per_equation')
+    cfg.wsindy.max_peer_l3_per_equation = 2;
+end
+if ~isfield(cfg.wsindy, 'second_pass_mode')
+    cfg.wsindy.second_pass_mode = 'wsindy';
+end
+if ~isfield(cfg.wsindy, 'target_linear_ridge_alpha')
+    cfg.wsindy.target_linear_ridge_alpha = 0;
+end
+if ~isfield(cfg.wsindy, 'target_linear_include_constant')
+    cfg.wsindy.target_linear_include_constant = false;
+end
+if ~isfield(cfg.wsindy, 'target_linear_include_time')
+    cfg.wsindy.target_linear_include_time = false;
+end
+if ~isfield(cfg.wsindy, 'target_linear_calibrate_amplitude')
+    cfg.wsindy.target_linear_calibrate_amplitude = false;
+end
+if ~isfield(cfg.wsindy, 'spatial_cvx_beta')
+    cfg.wsindy.spatial_cvx_beta = 1;
+end
+if ~isfield(cfg.wsindy, 'spatial_cvx_amp_beta')
+    cfg.wsindy.spatial_cvx_amp_beta = 1;
+end
+if ~isfield(cfg.wsindy, 'spatial_cvx_lambda_l1')
+    cfg.wsindy.spatial_cvx_lambda_l1 = 0;
+end
+if ~isfield(cfg.wsindy, 'spatial_cvx_sample_stride')
+    cfg.wsindy.spatial_cvx_sample_stride = 5;
+end
+
 fprintf('\nActive dataset: %s\n', cfg.data.name);
 fprintf('mrDMD rank: %d\n', cfg.mrdmd.svd_rank);
 if isfield(cfg.mrdmd, 'freq_threshold_cycles_per_snapshot')
@@ -64,7 +104,13 @@ for rr = 1:size(param_grid,1)
         data.X, data.dt, data.m, data.n, cfg.wsindy.input_levels, cfg.wsindy.target_level, ...
         cfg.frames.fit_start_idx, cfg.frames.fit_end_idx, cfg.frames.test_start_idx, cfg.frames.test_end_idx, ...
         top_input_modes_per_level, top_target_modes, ...
-        lambda1, lambda2, gamma, max_terms_per_equation, max_quadratic_base_terms, mrdmd.list_anchor_idx);
+        lambda1, lambda2, gamma, max_terms_per_equation, max_quadratic_base_terms, ...
+        mrdmd.list_anchor_idx, cfg.wsindy.include_constant_term, cfg.wsindy.include_time_term, ...
+    cfg.wsindy.force_target_peer_terms, cfg.wsindy.max_peer_l3_per_equation, cfg.wsindy.second_pass_mode, ...
+    cfg.wsindy.target_linear_ridge_alpha, cfg.wsindy.target_linear_include_constant, ...
+    cfg.wsindy.target_linear_include_time, cfg.wsindy.target_linear_calibrate_amplitude, ...
+    cfg.wsindy.spatial_cvx_beta, cfg.wsindy.spatial_cvx_lambda_l1, cfg.wsindy.spatial_cvx_sample_stride, ...
+    cfg.wsindy.spatial_cvx_amp_beta);
 
     mean_full_corr = mean(details_sweep.raw_full_corr);
     min_full_corr = min(details_sweep.raw_full_corr);

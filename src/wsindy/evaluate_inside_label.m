@@ -2,6 +2,16 @@ function val = evaluate_inside_label(label, tt, y, mode_labels, target_cols, xob
 %EVALUATE_INSIDE_LABEL Turns labels like '(L2 B2 Mode11)^2' into values.
 % Handles self quadratics and cross terms for now.
 
+if strcmp(label, '1')
+    val = 1;
+    return;
+end
+
+if strcmp(label, 't')
+    val = normalized_time_value(tt, tobs);
+    return;
+end
+
 % self quadratic
 if startsWith(label, '(') && endsWith(label, ')^2')
     inner = extractBetween(label, "(", ")^2");
@@ -42,4 +52,18 @@ end
 val = interp1(tobs, xobs(:,idx), tt, 'linear', 'extrap');
 
 end
+
+function val = normalized_time_value(tt, tobs)
+%NORMALIZED_TIME_VALUE Scale queried time to [-1, 1] over this window.
+
+t0 = min(tobs);
+t1 = max(tobs);
+if t1 <= t0
+    val = 0;
+else
+    val = 2 * (tt - t0) / (t1 - t0) - 1;
+end
+
+end
+
 
